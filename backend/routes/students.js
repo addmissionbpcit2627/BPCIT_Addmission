@@ -38,7 +38,8 @@ router.put('/me', authenticate, authorizeStudent, upload.single('photo'), async 
     let photoPath = existing[0].photo;
     if (req.file) {
       if (photoPath) {
-        const oldPath = path.join(process.env.UPLOAD_DIR || 'uploads', photoPath);
+        const UPLOAD_DIR = require('../config/uploadDir');
+        const oldPath = path.join(UPLOAD_DIR, photoPath);
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       }
       photoPath = req.file.filename;

@@ -2,11 +2,7 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR 
-  ? path.resolve(process.env.UPLOAD_DIR)
-  : (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT)
-    ? '/tmp/uploads'
-    : path.join(__dirname, '..', 'uploads');
+const UPLOAD_DIR = require('../config/uploadDir');
 
 const COLORS = {
   primary: '#1e3a5f',

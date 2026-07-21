@@ -14,11 +14,7 @@ const admissionsRoutes = require('./routes/admissions');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const UPLOAD_DIR = process.env.UPLOAD_DIR 
-  ? path.resolve(process.env.UPLOAD_DIR)
-  : (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT)
-    ? '/tmp/uploads'
-    : path.join(__dirname, 'uploads');
+const UPLOAD_DIR = require('./config/uploadDir');
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {

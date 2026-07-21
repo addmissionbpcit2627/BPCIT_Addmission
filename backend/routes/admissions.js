@@ -55,18 +55,15 @@ const initDb = async () => {
 };
 initDb();
 
+const UPLOAD_DIR = require('../config/uploadDir');
+
 // Multer Storage Configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = process.env.UPLOAD_DIR 
-      ? path.resolve(process.env.UPLOAD_DIR)
-      : (process.env.VERCEL || process.env.LAMBDA_TASK_ROOT)
-        ? '/tmp/uploads'
-        : path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!fs.existsSync(UPLOAD_DIR)) {
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
