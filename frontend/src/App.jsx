@@ -18,6 +18,7 @@ import EnterMarks from './pages/EnterMarks';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import MarkAttendance from './pages/MarkAttendance';
 import TeacherVerification from './pages/TeacherVerification';
+import Admission from './pages/Admission';
 
 function AppInner() {
   const { token } = useContext(AuthContext);
@@ -59,10 +60,8 @@ function AppInner() {
             <Route path="/student/dashboard" element={<StudentDashboard />} />
           </Route>
 
-          {/* ── Admission Routes ──────────────────────── */}
-          <Route element={<ProtectedRoute allowedRole="admission" />}>
-            <Route path="/admission" element={<StudentDashboard />} />
-          </Route>
+          {/* ── Admission Routes (Public) ──────────────── */}
+          <Route path="/admission" element={<Admission />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
