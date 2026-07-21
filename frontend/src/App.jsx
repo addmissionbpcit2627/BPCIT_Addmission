@@ -17,7 +17,6 @@ import StudentDashboard from './pages/StudentDashboard';
 import EnterMarks from './pages/EnterMarks';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import MarkAttendance from './pages/MarkAttendance';
-import Admission from './pages/Admission';
 import TeacherVerification from './pages/TeacherVerification';
 
 function AppInner() {
@@ -31,13 +30,12 @@ function AppInner() {
           {/* Default landing = student portal */}
           <Route path="/" element={<StudentPortal />} />
           <Route path="/login" element={<StudentPortal />} />
-          <Route path="/admission" element={<Admission />} />
 
           {/* Separate teacher portal */}
-          <Route path="/teacher/login" element={<TeacherLogin />} />
-          <Route path="/teacher/forgot-password" element={<ForgotPassword accountType="teacher" />} />
           {/* Keep old /register for any old bookmarks → redirect to teacher portal */}
           <Route path="/register" element={<Navigate to="/teacher/login" replace />} />
+          <Route path="/teacher/login" element={<TeacherLogin />} />
+          <Route path="/teacher/forgot-password" element={<ForgotPassword accountType="teacher" />} />
           {/* Forgot password — student portal */}
           <Route path="/forgot-password" element={<ForgotPassword accountType="student" />} />
 
@@ -52,11 +50,18 @@ function AppInner() {
             <Route path="/teacher/analytics" element={<AnalyticsDashboard />} />
             <Route path="/teacher/attendance" element={<MarkAttendance />} />
             <Route path="/teacher/verification" element={<TeacherVerification />} />
+            
+
           </Route>
 
           {/* ── Student Protected Routes ──────────────────────── */}
           <Route element={<ProtectedRoute allowedRole="student" />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
+          </Route>
+
+          {/* ── Admission Routes ──────────────────────── */}
+          <Route element={<ProtectedRoute allowedRole="admission" />}>
+            <Route path="/admission" element={<StudentDashboard />} />
           </Route>
 
           {/* Catch-all */}
