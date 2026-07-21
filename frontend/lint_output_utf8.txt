@@ -1,0 +1,30 @@
+﻿
+> frontend@0.0.0 lint
+> eslint .
+
+
+D:\code\student_database\frontend\src\context\AuthContext.jsx
+  12:19  error  'setLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+D:\code\student_database\frontend\src\pages\StudentProfile.jsx
+  232:1  error  Parsing error: Unexpected token `}`. Did you mean `&rbrace;` or `{"}"}`?
+
+D:\code\student_database\frontend\src\pages\TeacherDashboard.jsx
+  26:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  24 |
+  25 |   useEffect(() => {
+> 26 |     fetchStats();
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  27 |   }, []);
+  28 |
+  29 |   if (loading) return <div className="p-8 text-center">Loading dashboard...</div>;  react-hooks/set-state-in-effect
+
+Γ£û 3 problems (3 errors, 0 warnings)
+
