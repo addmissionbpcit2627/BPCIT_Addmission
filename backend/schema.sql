@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS admissions (
   is_ews           SMALLINT      DEFAULT 0,
   ews_path         VARCHAR(255)  DEFAULT NULL,
   antiragging_path VARCHAR(255)  DEFAULT NULL,
+  gender           VARCHAR(20)   DEFAULT NULL,
+  grips_path       VARCHAR(255)  DEFAULT NULL,
   status           VARCHAR(20)   DEFAULT 'Pending',
   created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

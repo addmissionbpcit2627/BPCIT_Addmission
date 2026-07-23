@@ -316,6 +316,13 @@ function TeacherVerification() {
                           <span className="text-xs font-bold text-slate-800">{selectedApp.is_ews === 1 ? 'Yes (Falls under EWS)' : 'No'}</span>
                         </div>
                       </div>
+                      <div className="flex items-start gap-3">
+                        <User className="w-4.5 h-4.5 text-slate-300 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Gender</span>
+                          <span className="text-xs font-bold text-slate-800">{selectedApp.gender || 'Not specified'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -329,6 +336,7 @@ function TeacherVerification() {
                         { label: 'Allotment Slip', file: selectedApp.allotment_path },
                         { label: 'Rank Card', file: selectedApp.rank_path },
                         { label: 'Domicile Cert.', file: selectedApp.domicile_path },
+                        { label: 'GRIPS Payment Receipt', file: selectedApp.grips_path },
                         { label: 'Caste Certificate', file: selectedApp.caste_path, isConditional: selectedApp.caste !== 'Gen' },
                         { label: 'EWS Certificate', file: selectedApp.ews_path, isConditional: selectedApp.is_ews === 1 },
                         { label: 'Anti-Ragging Undertaking', file: selectedApp.antiragging_path, isOptional: true }

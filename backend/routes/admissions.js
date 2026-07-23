@@ -31,10 +31,24 @@ const initDb = async () => {
         is_ews TINYINT DEFAULT 0,
         ews_path VARCHAR(255) DEFAULT NULL,
         antiragging_path VARCHAR(255) DEFAULT NULL,
+        gender VARCHAR(20) DEFAULT NULL,
+        grips_path VARCHAR(255) DEFAULT NULL,
         status VARCHAR(20) DEFAULT 'Pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 1b. Add gender and grips_path to admissions table if they don't exist
+    const [admGenderCols] = await pool.query("SHOW COLUMNS FROM admissions LIKE 'gender'");
+    if (admGenderCols.length === 0) {
+      await pool.query("ALTER TABLE admissions ADD COLUMN gender VARCHAR(20) DEFAULT NULL");
+      console.log('Added gender column to admissions table.');
+    }
+    const [admGripsCols] = await pool.query("SHOW COLUMNS FROM admissions LIKE 'grips_path'");
+    if (admGripsCols.length === 0) {
+      await pool.query("ALTER TABLE admissions ADD COLUMN grips_path VARCHAR(255) DEFAULT NULL");
+      console.log('Added grips_path column to admissions table.');
+    }
 
     // 2. Add columns to students table if they don't exist
     const [cols] = await pool.query("SHOW COLUMNS FROM students LIKE 'caste'");
@@ -94,7 +108,8 @@ const admissionUpload = upload.fields([
   { name: 'domicile', maxCount: 1 },
   { name: 'caste', maxCount: 1 },
   { name: 'antiragging', maxCount: 1 },
-  { name: 'ews', maxCount: 1 }
+  { name: 'ews', maxCount: 1 },
+  { name: 'grips', maxCount: 1 }
 ]);
 
 // POST /api/admissions
@@ -107,18 +122,18 @@ router.post('/', (req, res) => {
     }
 
     try {
-      const { name, guardianName, phone, email, dob, department, caste, isEws } = req.body;
+      const { name, guardianName, phone, email, dob, department, caste, isEws, gender } = req.body;
 
       // Validate textual inputs
-      if (!name || !guardianName || !phone || !email || !dob || !department || !caste) {
-        return res.status(400).json({ message: 'All text fields (including caste) are required.' });
+      if (!name || !guardianName || !phone || !email || !dob || !department || !caste || !gender) {
+        return res.status(400).json({ message: 'All text fields (including gender and caste) are required.' });
       }
 
       const isEwsVal = isEws === 'true' || isEws === 1 || isEws === '1' || isEws === true ? 1 : 0;
 
-      // Validate base required files
-      if (!req.files || !req.files.aadhar || !req.files.allotment || !req.files.rank || !req.files.domicile) {
-        return res.status(400).json({ message: 'Aadhar, Allotment Letter, Rank Card, and Domicile Certificate are required.' });
+      // Validate base required files (including grips receipt)
+      if (!req.files || !req.files.aadhar || !req.files.allotment || !req.files.rank || !req.files.domicile || !req.files.grips) {
+        return res.status(400).json({ message: 'Aadhar, Allotment Letter, Rank Card, Domicile Certificate, and GRIPS Payment Receipt are required.' });
       }
 
       // Conditional validation: Caste certificate required if caste is not Gen
@@ -135,6 +150,7 @@ router.post('/', (req, res) => {
       const allotment_path = req.files.allotment[0].filename;
       const rank_path = req.files.rank[0].filename;
       const domicile_path = req.files.domicile[0].filename;
+      const grips_path = req.files.grips[0].filename;
       const caste_path = req.files.caste && req.files.caste.length > 0 ? req.files.caste[0].filename : null;
       const ews_path = req.files.ews && req.files.ews.length > 0 ? req.files.ews[0].filename : null;
       const antiragging_path = req.files.antiragging ? req.files.antiragging[0].filename : null;
@@ -161,9 +177,9 @@ router.post('/', (req, res) => {
 
       // Insert record
       const [result] = await pool.query(
-        `INSERT INTO admissions (name, guardian_name, phone, email, dob, department, aadhar_path, allotment_path, rank_path, domicile_path, caste, caste_path, is_ews, ews_path, antiragging_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, guardianName, phone, email, dob, department, aadhar_path, allotment_path, rank_path, domicile_path, caste, caste_path, isEwsVal, ews_path, antiragging_path]
+        `INSERT INTO admissions (name, guardian_name, phone, email, dob, department, aadhar_path, allotment_path, rank_path, domicile_path, caste, caste_path, is_ews, ews_path, antiragging_path, gender, grips_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, guardianName, phone, email, dob, department, aadhar_path, allotment_path, rank_path, domicile_path, caste, caste_path, isEwsVal, ews_path, antiragging_path, gender, grips_path]
       );
 
       return res.status(201).json({
@@ -179,7 +195,30 @@ router.post('/', (req, res) => {
       });
     } catch (dbErr) {
       console.error('Database error in admission submission:', dbErr);
-      return res.status(500).json({ message: 'Server error: failed to submit admission application.' });
+      
+      // Clean up uploaded files in case database insertion fails after files have been processed
+      if (req.files) {
+        for (const fieldName of Object.keys(req.files)) {
+          const file = req.files[fieldName][0];
+          if (fs.existsSync(file.path)) {
+            try { fs.unlinkSync(file.path); } catch (e) {}
+          }
+        }
+      }
+
+      let errorMsg = 'Server error: failed to submit admission application.';
+      if (dbErr.code === '23505') {
+        if (dbErr.detail && dbErr.detail.includes('email')) {
+          errorMsg = 'An admission application with this email address already exists.';
+        } else if (dbErr.detail && dbErr.detail.includes('phone')) {
+          errorMsg = 'An admission application with this mobile number already exists.';
+        } else {
+          errorMsg = 'An admission application with this email or mobile number already exists.';
+        }
+      } else if (dbErr.message) {
+        errorMsg = `Database error: ${dbErr.message}`;
+      }
+      return res.status(500).json({ message: errorMsg });
     }
   });
 });
@@ -263,13 +302,14 @@ router.post('/:id/verify', authenticate, authorizeTeacher, async (req, res) => {
 
     // 6. Insert student into database
     await pool.query(
-      `INSERT INTO students (name, roll_no, registration_no, department, semester, dob, phone, email, guardian_name, password, admission_year, caste, is_ews)
-       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO students (name, roll_no, registration_no, department, semester, gender, dob, phone, email, guardian_name, password, admission_year, caste, is_ews)
+       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         app.name,
         roll_no,
         registration_no,
         finalDept,
+        app.gender,
         app.dob,
         app.phone,
         app.email,

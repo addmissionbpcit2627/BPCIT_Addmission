@@ -71,7 +71,8 @@ function Admission() {
     dob: '',
     department: '',
     caste: 'Gen',
-    isEws: false
+    isEws: false,
+    gender: ''
   });
 
   const [files, setFiles] = useState({
@@ -81,7 +82,8 @@ function Admission() {
     domicile: null,
     caste: null,
     antiragging: null,
-    ews: null
+    ews: null,
+    grips: null
   });
 
   const getRequiredDocs = () => {
@@ -89,7 +91,8 @@ function Admission() {
       { key: 'aadhar', name: 'Aadhar Card', desc: 'UIDAI issued Aadhaar ID card' },
       { key: 'allotment', name: 'Allotment Letter', desc: 'Official college allotment slip' },
       { key: 'rank', name: 'Rank Card', desc: 'State/National level exam rank sheet' },
-      { key: 'domicile', name: 'Domicile Certificate', desc: 'State residential proof certificate' }
+      { key: 'domicile', name: 'Domicile Certificate', desc: 'State residential proof certificate' },
+      { key: 'grips', name: 'GRIPS Payment Receipt', desc: 'Payment receipt of 800 rupees (PDF format)' }
     ];
     if (formData.caste !== 'Gen') {
       docs.push({ key: 'caste', name: 'Caste Certificate', desc: 'Community identity proof (SC/ST/OBC)' });
@@ -115,9 +118,10 @@ function Admission() {
   };
 
   const validateStep1 = () => {
-    const { name, guardianName, phone, email, dob } = formData;
+    const { name, guardianName, phone, email, dob, gender } = formData;
     if (!name.trim()) return 'Name is required';
     if (!guardianName.trim()) return 'Guardian Name is required';
+    if (!gender) return 'Gender selection is required';
     if (!phone.trim() || phone.length < 10) return 'Valid 10-digit Mobile Number is required';
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) return 'Valid Email address is required';
     if (!dob) return 'Date of Birth is required';
@@ -214,6 +218,7 @@ function Admission() {
     data.append('department', formData.department);
     data.append('caste', formData.caste);
     data.append('isEws', formData.isEws);
+    data.append('gender', formData.gender);
 
     // Append files
     Object.keys(files).forEach(key => {
@@ -231,7 +236,7 @@ function Admission() {
       setSuccessData(response.data);
     } catch (err) {
       console.error(err);
-      setSubmitError(err.response?.data?.message || 'Server error occurred during submission. Please try again.');
+      setSubmitError(err.response?.data?.message || err.message || 'Server error occurred during submission. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -533,6 +538,23 @@ function Admission() {
                     </div>
                   </div>
 
+                  {/* Gender Dropdown */}
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Gender *</label>
+                    <select
+                      name="gender"
+                      required
+                      value={formData.gender}
+                      onChange={handleTextChange}
+                      className="block w-full bg-white border border-slate-200 rounded-2xl py-3 px-4 text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-indigo-500 text-sm font-semibold transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_1rem_center] bg-no-repeat"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
                   {/* Caste Dropdown */}
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Caste Category *</label>
@@ -647,12 +669,7 @@ function Admission() {
                   <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Upload required and optional files in PDF format</p>
                 </div>
 
-                {submitError && (
-                  <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex gap-3 text-rose-600 text-xs font-bold items-center">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <span>{submitError}</span>
-                  </div>
-                )}
+
 
                 <div className="space-y-6">
                   {/* Required Documents */}
@@ -705,6 +722,28 @@ function Admission() {
             </div>
             <span className="font-black text-slate-900 text-sm tracking-tight mb-1">Uploading Documents</span>
             <span className="text-xs text-slate-400 leading-normal">Saving candidate profile and checking certificate integrity...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup Modal */}
+      {submitError && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-9999 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center max-w-sm text-center border border-white relative animate-scale-in">
+            <div className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-rose-100">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="font-black text-slate-900 text-lg tracking-tight mb-2">Submission Failed</h3>
+            <p className="text-xs text-slate-500 leading-normal mb-6 font-medium">
+              {submitError}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSubmitError(null)}
+              className="w-full bg-slate-950 text-white hover:bg-slate-800 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest cursor-pointer shadow-md transition-colors"
+            >
+              Dismiss
+            </button>
           </div>
         </div>
       )}
